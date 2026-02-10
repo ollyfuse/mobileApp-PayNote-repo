@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'welcome_screen.dart';
 import '../utils/platform_helper.dart';
 import '../utils/fee_calculator.dart';
@@ -23,11 +25,37 @@ class ContactSelectionScreen extends ConsumerStatefulWidget {
 
 class _ContactSelectionScreenState extends ConsumerState<ContactSelectionScreen> {
   final TextEditingController _phoneController = TextEditingController();
-  final List<Map<String, String>> _mockContacts = [
-    {'name': 'John Doe', 'phone': '0781234567'},
-    {'name': 'Jane Smith', 'phone': '0731234567'},
-    {'name': 'Mike Johnson', 'phone': '0721234567'},
-  ];
+  List<Contact> _contacts = [];
+  bool _isLoadingContacts = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadContacts();
+  }
+
+  Future<void> _loadContacts() async {
+    setState(() => _isLoadingContacts = true);
+    
+    try {
+      if (await Permission.contacts.request().isGranted) {
+        final contacts = await FlutterContacts.getContacts(
+          withProperties: true,
+          withPhoto: false,
+        );
+        setState(() {
+          _contacts = contacts.where((contact) => 
+            contact.phones.isNotEmpty
+          ).take(10).toList(); // Limit to 10 contacts
+        });
+      }
+    } catch (e) {
+      // If contacts fail, continue with empty list
+      print('Contacts loading failed: $e');
+    }
+    
+    setState(() => _isLoadingContacts = false);
+  }
 
   String _detectNetwork(String number) {
     if (FeeCalculator.isMerchantCode(number)) {
@@ -161,51 +189,68 @@ class _ContactSelectionScreenState extends ConsumerState<ContactSelectionScreen>
 
           const Divider(),
 
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text('Recent Contacts', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                const Text('Recent Contacts', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                const Spacer(),
+                if (_isLoadingContacts)
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+              ],
             ),
           ),
 
           Expanded(
-            child: ListView.builder(
-              itemCount: _mockContacts.length,
-              itemBuilder: (context, index) {
-                final contact = _mockContacts[index];
-                final network = _detectNetwork(contact['phone']!);
-                
-                return ListTile(
-                  leading: CircleAvatar(
-                    child: Text(contact['name']![0]),
-                  ),
-                  title: Text(contact['name']!),
-                  subtitle: Row(
-                    children: [
-                      Text(contact['phone']!),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: network == 'MTN' ? Colors.yellow.shade100 : Colors.red.shade100,
-                          borderRadius: BorderRadius.circular(4),
+            child: _contacts.isEmpty && !_isLoadingContacts
+                ? const Center(
+                    child: Text(
+                      'No contacts available\nUse manual entry above',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: _contacts.length,
+                    itemBuilder: (context, index) {
+                      final contact = _contacts[index];
+                      final phone = contact.phones.isNotEmpty ? contact.phones.first.number : '';
+                      final network = _detectNetwork(phone);
+                      
+                      return ListTile(
+                        leading: CircleAvatar(
+                          child: Text(contact.displayName.isNotEmpty ? contact.displayName[0] : '?'),
                         ),
-                        child: Text(
-                          network,
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: network == 'MTN' ? Colors.orange.shade800 : Colors.red.shade800,
-                          ),
+                        title: Text(contact.displayName),
+                        subtitle: Row(
+                          children: [
+                            Text(phone),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: network == 'MTN' ? Colors.yellow.shade100 : Colors.red.shade100,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                network,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: network == 'MTN' ? Colors.orange.shade800 : Colors.red.shade800,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                        trailing: const Icon(Icons.arrow_forward_ios),
+                        onTap: () => _makePayment(phone, contact.displayName),
+                      );
+                    },
                   ),
-                  trailing: const Icon(Icons.arrow_forward_ios),
-                  onTap: () => _makePayment(contact['phone']!, contact['name']),
-                );
-              },
-            ),
           ),
         ],
       ),
