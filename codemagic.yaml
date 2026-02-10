@@ -1,56 +1,23 @@
 workflows:
-  ios-workflow:
-    name: iOS Workflow for SideStore
-    instance_type: mac_mini_m1
-    max_build_duration: 60
-    environment:
-      flutter: 3.22.3  # More stable version
-      xcode: 15.2
-    scripts:
-      - name: Get Flutter packages
-        script: flutter pub get
-      - name: Build iOS app with compatibility
-        script: |
-          flutter build ios --release --no-codesign \
-            --target-platform ios-arm64 \
-            --dart-define=FLUTTER_WEB_USE_SKIA=true
-      - name: Create proper IPA
-        script: |
-          mkdir -p Payload
-          cp -r build/ios/iphoneos/Runner.app Payload/PayNote.app
-          zip -r PayNote.ipa Payload
-    artifacts:
-      - PayNote.ipa
-
   android-workflow:
     name: Android Workflow - APK Build
     instance_type: linux_x2
     max_build_duration: 60
     environment:
-      flutter: 3.22.3  # More stable for Android
-      java: 11         # Java 11 instead of 17
+      flutter: 3.22.3
+      java: 11
     scripts:
+      - name: Fix Android build files
+        script: |
+          # Update Kotlin version
+          sed -i "s/ext.kotlin_version = '1.7.10'/ext.kotlin_version = '1.8.22'/" android/build.gradle
+          # Update Gradle version
+          sed -i "s/gradle-7.5-all.zip/gradle-8.2-all.zip/" android/gradle/wrapper/gradle-wrapper.properties
       - name: Get Flutter packages
         script: flutter pub get
-      - name: Clean everything
-        script: |
-          flutter clean
-          flutter pub get
+      - name: Clean build
+        script: flutter clean
       - name: Build Android APK
-        script: flutter build apk --release --verbose
+        script: flutter build apk --release
     artifacts:
       - build/app/outputs/flutter-apk/app-release.apk
-
-  web-workflow:
-    name: Web Build (Fallback)
-    instance_type: linux_x2
-    max_build_duration: 30
-    environment:
-      flutter: 3.22.3
-    scripts:
-      - name: Build web
-        script: |
-          flutter pub get
-          flutter build web --release
-    artifacts:
-      - build/web/
