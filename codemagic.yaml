@@ -1,6 +1,6 @@
 workflows:
   ios-workflow:
-    name: iOS Workflow - Fix Imports
+    name: iOS Workflow - Force Clean Build
     instance_type: mac_mini_m1
     max_build_duration: 60
     environment:
@@ -15,24 +15,27 @@ workflows:
           rm -rf ios/Podfile.lock
           rm -rf ios/.symlinks
           rm -rf build
-      - name: Fix all imports and create stubs
+          rm -rf .dart_tool
+      - name: Force replace problematic files
         script: |
-          # Replace export_service.dart completely
+          # Force delete and recreate export_service.dart
+          rm -f lib/services/export_service.dart
           cat > lib/services/export_service.dart << 'EOF'
           import '../models/transaction.dart';
           
           class ExportService {
             static Future<String?> exportToCsv(List<Transaction> transactions) async {
-              return 'Export not available in minimal version';
+              return 'Export not available';
             }
           
             static Future<String?> exportToPdf(List<Transaction> transactions, Map<String, dynamic> reports) async {
-              return 'Export not available in minimal version';
+              return 'Export not available';
             }
           }
           EOF
           
-          # Replace database_mobile.dart completely
+          # Force delete and recreate database_mobile.dart
+          rm -f lib/services/database_mobile.dart
           cat > lib/services/database_mobile.dart << 'EOF'
           import '../models/transaction.dart' as models;
           import 'database_interface.dart';
@@ -57,7 +60,8 @@ workflows:
           }
           EOF
           
-          # Replace storage_service.dart completely
+          # Force delete and recreate storage_service.dart
+          rm -f lib/services/storage_service.dart
           cat > lib/services/storage_service.dart << 'EOF'
           class StorageService {
             static String? _userNetwork;
@@ -76,10 +80,10 @@ workflows:
           }
           EOF
           
-          # Remove url_launcher imports and calls from all files
-          find lib -name "*.dart" -exec sed -i '' '/import.*url_launcher/d' {} \;
-          find lib -name "*.dart" -exec sed -i '' '/launchUrl/d' {} \;
-          find lib -name "*.dart" -exec sed -i '' '/canLaunchUrl/d' {} \;
+          # Remove all url_launcher references
+          grep -rl "url_launcher" lib/ | xargs sed -i '' '/url_launcher/d'
+          grep -rl "launchUrl" lib/ | xargs sed -i '' '/launchUrl/d'
+          grep -rl "canLaunchUrl" lib/ | xargs sed -i '' '/canLaunchUrl/d'
       - name: Get Flutter packages
         script: |
           flutter pub get
