@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter_contacts/flutter_contacts.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'welcome_screen.dart';
 import '../utils/platform_helper.dart';
 import '../utils/fee_calculator.dart';
@@ -25,37 +23,6 @@ class ContactSelectionScreen extends ConsumerStatefulWidget {
 
 class _ContactSelectionScreenState extends ConsumerState<ContactSelectionScreen> {
   final TextEditingController _phoneController = TextEditingController();
-  List<Contact> _contacts = [];
-  bool _isLoadingContacts = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadContacts();
-  }
-
-  Future<void> _loadContacts() async {
-    setState(() => _isLoadingContacts = true);
-    
-    try {
-      if (await Permission.contacts.request().isGranted) {
-        final contacts = await FlutterContacts.getContacts(
-          withProperties: true,
-          withPhoto: false,
-        );
-        setState(() {
-          _contacts = contacts.where((contact) => 
-            contact.phones.isNotEmpty
-          ).take(10).toList(); // Limit to 10 contacts
-        });
-      }
-    } catch (e) {
-      // If contacts fail, continue with empty list
-      print('Contacts loading failed: $e');
-    }
-    
-    setState(() => _isLoadingContacts = false);
-  }
 
   String _detectNetwork(String number) {
     if (FeeCalculator.isMerchantCode(number)) {
@@ -94,15 +61,16 @@ class _ContactSelectionScreenState extends ConsumerState<ContactSelectionScreen>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Transaction Status'),
-        content: Text('Was the payment of ${widget.amount} successful?'),
+        backgroundColor: const Color(0xFF1A1A1C),
+        title: const Text('Transaction Status', style: TextStyle(color: Colors.white)),
+        content: Text('Was the payment of ${widget.amount} RWF successful?', style: const TextStyle(color: Colors.white)),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
               Navigator.of(context).pop();
             },
-            child: const Text('Failed'),
+            child: const Text('Failed', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -126,17 +94,27 @@ class _ContactSelectionScreenState extends ConsumerState<ContactSelectionScreen>
                 
                 await DatabaseService.insertTransaction(transaction);
                 
-                Navigator.of(context).pop();
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Transaction saved! ${PlatformHelper.isWeb ? "(Web storage)" : "(Mobile database)"}')),
-                );
+                if (mounted) {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Transaction saved! ${PlatformHelper.isWeb ? "(Web storage)" : "(Mobile database)"}'),
+                      backgroundColor: const Color(0xFF1A1A1C),
+                    ),
+                  );
+                }
               } catch (e) {
-                Navigator.of(context).pop();
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Transaction noted!')),
-                );
+                if (mounted) {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Transaction noted!'),
+                      backgroundColor: Color(0xFF1A1A1C),
+                    ),
+                  );
+                }
               }
             },
             child: const Text('Success'),
@@ -149,108 +127,109 @@ class _ContactSelectionScreenState extends ConsumerState<ContactSelectionScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF0A0A0B),
       appBar: AppBar(
-        title: const Text('Select Contact'),
+        title: const Text('Enter Phone Number'),
+        backgroundColor: Colors.transparent,
       ),
       body: Column(
         children: [
+          // Amount Display
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            color: Colors.blue.shade50,
+            margin: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFF1A1A1C).withOpacity(0.8),
+                  const Color(0xFF2A2A2C).withOpacity(0.6),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withOpacity(0.1), width: 0.5),
+            ),
             child: Column(
               children: [
-                Text('Amount: ${widget.amount}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                Text('Category: ${widget.category}', style: const TextStyle(fontSize: 14)),
+                Text('Amount: ${widget.amount.toInt()} RWF', 
+                     style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                const SizedBox(height: 4),
+                Text('Category: ${widget.category}', 
+                     style: const TextStyle(fontSize: 14, color: Colors.grey)),
               ],
             ),
           ),
 
+          // Phone Input
           Padding(
             padding: const EdgeInsets.all(16),
             child: TextField(
               controller: _phoneController,
+              style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 labelText: 'Enter phone number or merchant code',
+                labelStyle: const TextStyle(color: Colors.grey),
                 hintText: '0781234567 or 12345',
-                border: const OutlineInputBorder(),
+                hintStyle: const TextStyle(color: Colors.grey),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFF00FF88)),
+                ),
                 suffixIcon: IconButton(
                   onPressed: () {
                     if (_phoneController.text.isNotEmpty) {
                       _makePayment(_phoneController.text, null);
                     }
                   },
-                  icon: const Icon(Icons.send),
+                  icon: const Icon(Icons.send, color: Color(0xFF00FF88)),
                 ),
               ),
               keyboardType: TextInputType.phone,
             ),
           ),
 
-          const Divider(),
+          const Spacer(),
 
-          Padding(
+          // Info Card
+          Container(
+            margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(16),
-            child: Row(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFF1A1A1C).withOpacity(0.8),
+                  const Color(0xFF2A2A2C).withOpacity(0.6),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withOpacity(0.1), width: 0.5),
+            ),
+            child: const Column(
               children: [
-                const Text('Recent Contacts', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-                const Spacer(),
-                if (_isLoadingContacts)
-                  const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
+                Text(
+                  'Manual Entry Only',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Enter phone numbers manually for payments.\nMerchant codes (5-6 digits) have no fees.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
               ],
             ),
-          ),
-
-          Expanded(
-            child: _contacts.isEmpty && !_isLoadingContacts
-                ? const Center(
-                    child: Text(
-                      'No contacts available\nUse manual entry above',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  )
-                : ListView.builder(
-                    itemCount: _contacts.length,
-                    itemBuilder: (context, index) {
-                      final contact = _contacts[index];
-                      final phone = contact.phones.isNotEmpty ? contact.phones.first.number : '';
-                      final network = _detectNetwork(phone);
-                      
-                      return ListTile(
-                        leading: CircleAvatar(
-                          child: Text(contact.displayName.isNotEmpty ? contact.displayName[0] : '?'),
-                        ),
-                        title: Text(contact.displayName),
-                        subtitle: Row(
-                          children: [
-                            Text(phone),
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: network == 'MTN' ? Colors.yellow.shade100 : Colors.red.shade100,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                network,
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: network == 'MTN' ? Colors.orange.shade800 : Colors.red.shade800,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        trailing: const Icon(Icons.arrow_forward_ios),
-                        onTap: () => _makePayment(phone, contact.displayName),
-                      );
-                    },
-                  ),
           ),
         ],
       ),
