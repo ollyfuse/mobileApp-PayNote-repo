@@ -45,6 +45,11 @@ workflows:
         script: |
           flutter pub get
           flutter pub deps
+      - name: Fix plugin registration
+        script: |
+          rm -f ios/Runner/GeneratedPluginRegistrant.*
+          flutter pub get
+          sed -i '' 's/platform :ios, .*/platform :ios, '\''12.0'\''/' ios/Podfile
       - name: Clean iOS build
         script: |
           cd ios
