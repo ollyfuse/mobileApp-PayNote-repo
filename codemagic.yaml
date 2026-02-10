@@ -4,15 +4,9 @@ workflows:
     instance_type: linux_x2
     max_build_duration: 60
     environment:
-      flutter: 3.22.3
+      flutter: 3.19.6  # Known stable version
       java: 11
     scripts:
-      - name: Fix Android build files
-        script: |
-          # Update Kotlin version
-          sed -i "s/ext.kotlin_version = '1.7.10'/ext.kotlin_version = '1.8.22'/" android/build.gradle
-          # Update Gradle version
-          sed -i "s/gradle-7.5-all.zip/gradle-8.2-all.zip/" android/gradle/wrapper/gradle-wrapper.properties
       - name: Get Flutter packages
         script: flutter pub get
       - name: Clean build
@@ -21,3 +15,17 @@ workflows:
         script: flutter build apk --release
     artifacts:
       - build/app/outputs/flutter-apk/app-release.apk
+
+  web-workflow:
+    name: Web Build (Recommended)
+    instance_type: linux_x2
+    max_build_duration: 30
+    environment:
+      flutter: 3.19.6
+    scripts:
+      - name: Build web app
+        script: |
+          flutter pub get
+          flutter build web --release
+    artifacts:
+      - build/web/
