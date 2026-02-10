@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/category.dart';
 import 'contact_selection_screen.dart';
 import '../services/storage_service.dart';
@@ -363,16 +364,23 @@ class QuickPayScreen extends ConsumerWidget {
   }
 
   Future<void> _checkBalance(BuildContext context, WidgetRef ref) async {
-    final ussdCode = '*182*6*1#';
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Balance USSD: $ussdCode'),
-        backgroundColor: const Color(0xFF1A1A1C),
-      ),
-    );
-  }
+    final userNetwork = ref.read(userNetworkProvider);
+    if (userNetwork == null) return;
 
+    final ussdCode = '*182*6*1#';
+    final uri = Uri(scheme: 'tel', path: ussdCode);
+    
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Balance USSD: $ussdCode'),
+          backgroundColor: const Color(0xFF1A1A1C),
+        ),
+      );
+    }
+  }
 
   void _showNetworkSettings(BuildContext context, WidgetRef ref) {
     final currentNetwork = ref.read(userNetworkProvider);
