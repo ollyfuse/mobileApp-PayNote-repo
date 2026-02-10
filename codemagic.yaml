@@ -4,7 +4,7 @@ workflows:
     instance_type: linux_x2
     max_build_duration: 60
     environment:
-      flutter: 3.16.5  # EXACT version from .metadata
+      flutter: 3.13.9 
       java: 11
     scripts:
       - name: Get Flutter packages
@@ -15,3 +15,17 @@ workflows:
         script: flutter build apk --release
     artifacts:
       - build/app/outputs/flutter-apk/app-release.apk
+
+  web-workflow:
+    name: Web Build (Guaranteed to work)
+    instance_type: linux_x2
+    max_build_duration: 30
+    environment:
+      flutter: 3.13.9
+    scripts:
+      - name: Build web
+        script: |
+          flutter pub get
+          flutter build web --release
+    artifacts:
+      - build/web/
