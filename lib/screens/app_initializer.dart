@@ -19,17 +19,26 @@ class _AppInitializerState extends ConsumerState<AppInitializer> {
   }
 
   Future<void> _initializeApp() async {
-    final savedNetwork = await StorageService.getUserNetwork();
-    
-    if (savedNetwork != null) {
-      ref.read(userNetworkProvider.notifier).state = savedNetwork;
+    try {
+      final savedNetwork = await StorageService.getUserNetwork();
       
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const MainNavigation()),
-        );
+      if (savedNetwork != null) {
+        ref.read(userNetworkProvider.notifier).state = savedNetwork;
+        
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const MainNavigation()),
+          );
+        }
+      } else {
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+          );
+        }
       }
-    } else {
+    } catch (e) {
+      // If anything fails, go to welcome screen
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const WelcomeScreen()),
@@ -42,7 +51,7 @@ class _AppInitializerState extends ConsumerState<AppInitializer> {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: Center(
-        child: CircularProgressIndicator(),
+        child: CircularProgressIndicator(color: Color(0xFF00FF88)),
       ),
     );
   }
