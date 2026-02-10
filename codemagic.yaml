@@ -4,7 +4,7 @@ workflows:
     instance_type: mac_mini_m1
     max_build_duration: 60
     environment:
-      flutter: 3.24.5  # Updated to latest stable
+      flutter: 3.22.3  # More stable version
       xcode: 15.2
     scripts:
       - name: Get Flutter packages
@@ -27,14 +27,30 @@ workflows:
     instance_type: linux_x2
     max_build_duration: 60
     environment:
-      flutter: 3.24.5  # Updated to latest stable
-      java: 17
+      flutter: 3.22.3  # More stable for Android
+      java: 11         # Java 11 instead of 17
     scripts:
       - name: Get Flutter packages
         script: flutter pub get
-      - name: Clean build
-        script: flutter clean
+      - name: Clean everything
+        script: |
+          flutter clean
+          flutter pub get
       - name: Build Android APK
-        script: flutter build apk --release
+        script: flutter build apk --release --verbose
     artifacts:
       - build/app/outputs/flutter-apk/app-release.apk
+
+  web-workflow:
+    name: Web Build (Fallback)
+    instance_type: linux_x2
+    max_build_duration: 30
+    environment:
+      flutter: 3.22.3
+    scripts:
+      - name: Build web
+        script: |
+          flutter pub get
+          flutter build web --release
+    artifacts:
+      - build/web/
