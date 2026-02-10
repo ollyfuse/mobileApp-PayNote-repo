@@ -1,18 +1,18 @@
 workflows:
   ios-workflow:
-    name: iOS Workflow for AltStore
+    name: iOS Workflow for SideStore
     instance_type: mac_mini_m1
     max_build_duration: 60
     environment:
-      flutter: stable
-      xcode: latest
+      flutter: 3.16.0  # Use specific stable version
+      xcode: 15.0      # Use compatible Xcode version
     scripts:
       - name: Get Flutter packages
         script: flutter packages pub get
       - name: Build iOS app (unsigned)
         script: |
-          flutter build ios --release --no-codesign
-      - name: Create IPA for AltStore
+          flutter build ios --release --no-codesign --target-platform ios-arm64
+      - name: Create IPA for SideStore
         script: |
           mkdir -p build/ios/ipa
           cp -r build/ios/iphoneos/Runner.app build/ios/ipa/

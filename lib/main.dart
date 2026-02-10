@@ -50,11 +50,11 @@ class PayNoteApp extends StatelessWidget {
             ),
           ),
         ),
-        cardTheme: CardTheme(
-          color: const Color(0xFF1A1A1C).withOpacity(0.8),
+        cardTheme: const CardThemeData(
+          color: Color(0xFF1A1A1C),
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.all(Radius.circular(20)),
           ),
         ),
         textTheme: const TextTheme(
