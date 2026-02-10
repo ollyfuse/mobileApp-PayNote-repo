@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'welcome_screen.dart';
 import '../utils/platform_helper.dart';
 import '../utils/fee_calculator.dart';
@@ -46,16 +45,21 @@ class _ContactSelectionScreenState extends ConsumerState<ContactSelectionScreen>
     if (userNetwork == null) return;
     
     final ussdCode = _generateUSSD(phoneNumber, widget.amount, userNetwork);
-    final uri = Uri(scheme: 'tel', path: ussdCode);
     
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-      
-      if (mounted) {
-        _showConfirmationDialog(phoneNumber, contactName);
-      }
+    // Show USSD code to user instead of launching
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('USSD Code: $ussdCode'),
+        backgroundColor: const Color(0xFF1A1A1C),
+        duration: const Duration(seconds: 3),
+      ),
+    );
+    
+    if (mounted) {
+      _showConfirmationDialog(phoneNumber, contactName);
     }
   }
+
 
   void _showConfirmationDialog(String phoneNumber, String? contactName) {
     showDialog(
