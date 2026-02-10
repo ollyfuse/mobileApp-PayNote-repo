@@ -1,20 +1,62 @@
 workflows:
   ios-workflow:
-    name: iOS Workflow for SideStore
+    name: iOS Workflow - Clean Build with Custom Icon
     instance_type: mac_mini_m1
     max_build_duration: 60
     environment:
-      flutter: 3.19.0  # Latest stable
-      xcode: 15.2      # More compatible
+      flutter: 3.19.0
+      xcode: 15.2
+      cocoapods: default
     scripts:
+      - name: Clean everything
+        script: |
+          flutter clean
+          rm -rf ios/Pods
+          rm -rf ios/Podfile.lock
+          rm -rf ios/.symlinks
+          rm -rf build
+      - name: Generate app icons
+        script: |
+          # Install ImageMagick for icon resizing
+          brew install imagemagick
+          
+          # Create all required iOS icon sizes from your app_icon_1024.png
+          cd ios/Runner/Assets.xcassets/AppIcon.appiconset/
+          
+          # Generate all required sizes
+          magick convert ../../../../app_icon_1024.png -resize 20x20 Icon-App-20x20@1x.png
+          magick convert ../../../../app_icon_1024.png -resize 40x40 Icon-App-20x20@2x.png
+          magick convert ../../../../app_icon_1024.png -resize 60x60 Icon-App-20x20@3x.png
+          magick convert ../../../../app_icon_1024.png -resize 29x29 Icon-App-29x29@1x.png
+          magick convert ../../../../app_icon_1024.png -resize 58x58 Icon-App-29x29@2x.png
+          magick convert ../../../../app_icon_1024.png -resize 87x87 Icon-App-29x29@3x.png
+          magick convert ../../../../app_icon_1024.png -resize 40x40 Icon-App-40x40@1x.png
+          magick convert ../../../../app_icon_1024.png -resize 80x80 Icon-App-40x40@2x.png
+          magick convert ../../../../app_icon_1024.png -resize 120x120 Icon-App-40x40@3x.png
+          magick convert ../../../../app_icon_1024.png -resize 120x120 Icon-App-60x60@2x.png
+          magick convert ../../../../app_icon_1024.png -resize 180x180 Icon-App-60x60@3x.png
+          magick convert ../../../../app_icon_1024.png -resize 76x76 Icon-App-76x76@1x.png
+          magick convert ../../../../app_icon_1024.png -resize 152x152 Icon-App-76x76@2x.png
+          magick convert ../../../../app_icon_1024.png -resize 167x167 Icon-App-83.5x83.5@2x.png
+          magick convert ../../../../app_icon_1024.png -resize 1024x1024 Icon-App-1024x1024@1x.png
+          
+          cd ../../../../
       - name: Get Flutter packages
-        script: flutter packages pub get
-      - name: Build iOS app with compatibility
+        script: |
+          flutter pub get
+          flutter pub deps
+      - name: Clean iOS build
+        script: |
+          cd ios
+          pod cache clean --all
+          pod deintegrate
+          pod install --repo-update
+          cd ..
+      - name: Build iOS app
         script: |
           flutter build ios --release --no-codesign \
-            --target-platform ios-arm64 \
-            --dart-define=FLUTTER_WEB_USE_SKIA=true
-      - name: Create proper IPA
+            --target-platform ios-arm64
+      - name: Create IPA
         script: |
           mkdir -p Payload
           cp -r build/ios/iphoneos/Runner.app Payload/PayNote.app
