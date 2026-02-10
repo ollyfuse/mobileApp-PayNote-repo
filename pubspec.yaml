@@ -1,40 +1,32 @@
-workflows:
-  ios-workflow:
-    name: iOS Workflow for SideStore
-    instance_type: mac_mini_m1
-    max_build_duration: 60
-    environment:
-      flutter: 3.24.5  # Updated to latest stable
-      xcode: 15.2
-    scripts:
-      - name: Get Flutter packages
-        script: flutter pub get
-      - name: Build iOS app with compatibility
-        script: |
-          flutter build ios --release --no-codesign \
-            --target-platform ios-arm64 \
-            --dart-define=FLUTTER_WEB_USE_SKIA=true
-      - name: Create proper IPA
-        script: |
-          mkdir -p Payload
-          cp -r build/ios/iphoneos/Runner.app Payload/PayNote.app
-          zip -r PayNote.ipa Payload
-    artifacts:
-      - PayNote.ipa
+name: paynote
+description: "PayNote - Smart USSD helper and transaction tracker"
+publish_to: 'none'
 
-  android-workflow:
-    name: Android Workflow - APK Build
-    instance_type: linux_x2
-    max_build_duration: 60
-    environment:
-      flutter: 3.24.5  # Updated to latest stable
-      java: 17
-    scripts:
-      - name: Get Flutter packages
-        script: flutter pub get
-      - name: Clean build
-        script: flutter clean
-      - name: Build Android APK
-        script: flutter build apk --release
-    artifacts:
-      - build/app/outputs/flutter-apk/app-release.apk
+version: 1.0.0+1
+
+environment:
+  sdk: '^3.10.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  sqflite: ^2.3.0
+  flutter_contacts: ^1.1.7+1 
+  permission_handler: ^11.3.1  
+  url_launcher: ^6.2.1
+  flutter_riverpod: ^2.4.9
+  shared_preferences: ^2.2.2
+  path: ^1.8.3
+  fl_chart: ^0.65.0
+  csv: ^5.0.2
+  pdf: ^3.10.7
+  path_provider: ^2.1.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
