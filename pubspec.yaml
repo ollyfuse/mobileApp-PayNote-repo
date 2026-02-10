@@ -1,38 +1,24 @@
-workflows:
-  ios-workflow:
-    name: iOS Workflow - Minimal Dependencies
-    instance_type: mac_mini_m1
-    max_build_duration: 60
-    environment:
-      flutter: 3.19.0
-      xcode: 15.2
-      cocoapods: default
-    scripts:
-      - name: Clean everything
-        script: |
-          flutter clean
-          rm -rf ios/Pods
-          rm -rf ios/Podfile.lock
-          rm -rf ios/.symlinks
-          rm -rf build
-      - name: Remove problematic dependencies
-        script: |
-          sed -i '' '/sqflite:/d' pubspec.yaml
-          sed -i '' '/url_launcher:/d' pubspec.yaml
-          sed -i '' '/shared_preferences:/d' pubspec.yaml
-          sed -i '' '/csv:/d' pubspec.yaml
-          sed -i '' '/pdf:/d' pubspec.yaml
-          sed -i '' '/path_provider:/d' pubspec.yaml
-      - name: Get Flutter packages
-        script: |
-          flutter pub get
-      - name: Build iOS app
-        script: |
-          flutter build ios --release --no-codesign
-      - name: Create IPA
-        script: |
-          mkdir -p Payload
-          cp -r build/ios/iphoneos/Runner.app Payload/PayNote.app
-          zip -r PayNote.ipa Payload
-    artifacts:
-      - PayNote.ipa
+name: paynote
+description: "PayNote - Smart USSD helper and transaction tracker"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '^3.10.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  flutter_riverpod: ^2.4.9
+  path: ^1.8.3
+  fl_chart: ^0.65.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true

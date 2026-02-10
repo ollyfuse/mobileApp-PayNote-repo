@@ -15,34 +15,6 @@ workflows:
           rm -rf ios/Podfile.lock
           rm -rf ios/.symlinks
           rm -rf build
-      - name: Create minimal pubspec
-        script: |
-          cat > pubspec.yaml << 'EOF'
-          name: paynote
-          description: "PayNote - Smart USSD helper and transaction tracker"
-          publish_to: 'none'
-          
-          version: 1.0.0+1
-          
-          environment:
-            sdk: '>=3.2.3 <4.0.0'
-          
-          dependencies:
-            flutter:
-              sdk: flutter
-            cupertino_icons: ^1.0.2
-            flutter_riverpod: ^2.4.9
-            path: ^1.8.3
-            fl_chart: ^0.65.0
-          
-          dev_dependencies:
-            flutter_test:
-              sdk: flutter
-            flutter_lints: ^2.0.0
-          
-          flutter:
-            uses-material-design: true
-          EOF
       - name: Get Flutter packages
         script: |
           flutter pub get
