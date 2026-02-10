@@ -4,49 +4,9 @@ workflows:
     instance_type: linux_x2
     max_build_duration: 60
     environment:
-      flutter: 3.19.6
+      flutter: 3.16.5  # EXACT version from .metadata
       java: 11
     scripts:
-      - name: Fix Android build configuration
-        script: |
-          # Revert to compatible versions
-          cat > android/build.gradle << 'EOF'
-          buildscript {
-              ext.kotlin_version = '1.7.10'
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-              dependencies {
-                  classpath 'com.android.tools.build:gradle:7.3.0'
-                  classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-              }
-          }
-          allprojects {
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-          }
-          rootProject.buildDir = '../build'
-          subprojects {
-              project.buildDir = "${rootProject.buildDir}/${project.name}"
-          }
-          subprojects {
-              project.evaluationDependsOn(':app')
-          }
-          tasks.register("clean", Delete) {
-              delete rootProject.buildDir
-          }
-          EOF
-          
-          # Fix Gradle wrapper
-          echo "distributionUrl=https\\://services.gradle.org/distributions/gradle-7.5-all.zip" > android/gradle/wrapper/gradle-wrapper.properties
-          echo "distributionBase=GRADLE_USER_HOME" >> android/gradle/wrapper/gradle-wrapper.properties
-          echo "distributionPath=wrapper/dists" >> android/gradle/wrapper/gradle-wrapper.properties
-          echo "zipStoreBase=GRADLE_USER_HOME" >> android/gradle/wrapper/gradle-wrapper.properties
-          echo "zipStorePath=wrapper/dists" >> android/gradle/wrapper/gradle-wrapper.properties
-          
       - name: Get Flutter packages
         script: flutter pub get
       - name: Clean build
